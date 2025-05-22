@@ -19,7 +19,7 @@ class StoryBranchGenerator:
         self.summary_dir = summary_dir
         os.makedirs(self.summary_dir, exist_ok=True)
     
-    async def create_story_branch_from_text(self, text: str, filename: str, disease: str, language: str = "Italian") -> Tuple[Optional[StoryBranch], Optional[str]]:
+    async def create_story_branch_from_text(self, text: str, filename: str, disease: str, language: str = "Italian", how_many_nodes: int = 10) -> Tuple[Optional[StoryBranch], Optional[str]]:
         """Process a single text document through the agent pipeline
         
         Args:
@@ -63,7 +63,7 @@ class StoryBranchGenerator:
                 name="story branch generator",
                 instructions = f"""
                 Sei un esperto nella creazione di esperienze narrative interattive per persone con condizioni di salute.
-                Crea una *story branch* composta da 10 nodi decisionali, basata sul testo fornito riguardo a {disease}.
+                Crea una *story branch* composta da {how_many_nodes} nodi decisionali, basata sul testo fornito riguardo a {disease}.
 
                 Per ogni nodo:
                 1. Descrivi una situazione realistica che potrebbe verificarsi durante una giornata tipica di una persona con {disease}, in cui sia necessario compiere una scelta.
