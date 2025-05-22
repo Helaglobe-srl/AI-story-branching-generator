@@ -23,6 +23,8 @@ nest_asyncio.apply()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RAW_TEXT_DIR, SUMMARY_TEXT_DIR, JSON_OUTPUT_DIR = setup_directories(BASE_DIR)
 
+LANGUAGE = "Italian"
+
 def main():
     st.title("Story Branch Maker")
     
@@ -71,6 +73,15 @@ def main():
     
     # option for combined excel file
     combine_excel = st.checkbox("Create a single Excel file with all story branches", value=True)
+    
+    # number of nodes selection
+    how_many_nodes = st.number_input(
+        "Number of story branch nodes:",
+        min_value=1,
+        max_value=10,
+        value=10,
+        help="Choose how many decision nodes to generate in the story branch"
+    )
     
     st.write("---")
     
@@ -124,7 +135,7 @@ def main():
                         
                         # process text with agents
                         story_branch, base_filename = loop.run_until_complete(
-                            story_generator.create_story_branch_from_text(pdf_text, pdf_file.name, disease, "Italian")
+                            story_generator.create_story_branch_from_text(pdf_text, pdf_file.name, disease, language=LANGUAGE, how_many_nodes=how_many_nodes)
                         )
                         
                         if story_branch:
@@ -196,7 +207,7 @@ def main():
                         
                         # process text with agents
                         story_branch, base_filename = loop.run_until_complete(
-                            story_generator.create_story_branch_from_text(url_text, base_filename, disease, "Italian")
+                            story_generator.create_story_branch_from_text(url_text, base_filename, disease, language=LANGUAGE, how_many_nodes=how_many_nodes)
                         )
                         
                         if story_branch:
