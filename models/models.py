@@ -22,7 +22,7 @@ class Node(BaseModel):
     chat: Optional[List[ChatMessage]] = Field(None, description="the conversation between characters")
     choices: List[Choice] = Field(
         ..., 
-        description="list of possible choices the character can make in this situation",
+        description="list of possible choices the character can make in this situation"
     )
 
 class StoryBranch(BaseModel):
@@ -34,36 +34,80 @@ class StoryBranch(BaseModel):
 
     class Config:
         json_schema_extra = {
-            "example": {
-                "disease": "ipertensione",
-                "nodes": [
-                    {
-                        "situation": "marco si sveglia con un leggero mal di testa. deve prendere le medicine per l'ipertensione ma ha un importante incontro di lavoro tra un'ora e sa che le medicine potrebbero causargli sonnolenza.",
-                        "reasoning": "l'aderenza alla terapia è importante, ma anche gli impegni quotidiani e gli effetti collaterali possono influenzare le decisioni.",
-                        "background": "camera da letto",
-                        "character1": {
-                            "type": "paziente"
-                        },
-                        "character2": {
-                            "type": "medico"
-                        },
-                        "chat": [
-                            {"who": 1, "text": "dottore, le medicine mi fanno sentire stanco durante il giorno. oggi ho un incontro importante."},
-                            {"who": 2, "text": "capisco la sua preoccupazione, ma è importante mantenere regolare l'assunzione dei farmaci."}
-                        ],
-                        "choices": [
-                            {
-                                "text": "prendere la medicina come prescritto, nonostante il rischio di sonnolenza durante l'incontro",
-                                "outcome": "la pressione rimane sotto controllo, ma marco avverte una leggera sonnolenza durante la presentazione",
-                                "impact": "beneficio per la salute a lungo termine, ma potenziale impatto negativo sulla performance lavorativa immediata"
+            "examples": [
+                {
+                    "disease": "ipertensione",
+                    "nodes": [
+                        {
+                            "situation": "marco si sveglia con un leggero mal di testa. deve prendere le medicine per l'ipertensione ma ha un importante incontro di lavoro tra un'ora e sa che le medicine potrebbero causargli sonnolenza.",
+                            "reasoning": "l'aderenza alla terapia è importante, ma anche gli impegni quotidiani e gli effetti collaterali possono influenzare le decisioni.",
+                            "background": "camera da letto",
+                            "character1": {
+                                "type": "paziente"
                             },
-                            {
-                                "text": "rimandare l'assunzione del farmaco a dopo l'incontro di lavoro per rimanere più lucido",
-                                "outcome": "marco riesce a mantenere la concentrazione durante l'incontro, ma la sua pressione risulta più elevata del solito",
-                                "impact": "vantaggio immediato nella performance lavorativa, ma potenziale rischio per la salute se questo comportamento diventa abituale"
-                            }
-                        ]
-                    }
-                ]
-            }
-        } 
+                            "character2": {
+                                "type": "familiare"
+                            },
+                            "chat": [
+                                { "who": 1, "text": "oggi ho un incontro importante e se prendo la medicina potrei sentirmi stanco." },
+                                { "who": 2, "text": "eh sì, lo so che a volte ti rallenta un po'. non puoi prenderla dopo l'incontro?" },
+                                { "who": 1, "text": "non so, ho sempre paura che saltare l’orario preciso faccia male." },
+                                { "who": 2, "text": "ma è solo per oggi, no? magari cerca di prenderla appena finisci." },
+                                { "who": 1, "text": "sì, ma mi dà ansia anche così. magari la prendo adesso e vada come vada." },
+                                { "who": 2, "text": "fai come ti senti più tranquillo. magari mangia qualcosa prima, ti aiuta un po’ con la stanchezza." },
+                                { "who": 1, "text": "ok, ci penso un attimo. grazie." }
+                            ],
+                            "choices": [
+                                {
+                                    "text": "prendere la medicina come prescritto, nonostante il rischio di sonnolenza durante l'incontro",
+                                    "outcome": "la pressione rimane sotto controllo, ma marco avverte una leggera sonnolenza durante la presentazione",
+                                    "impact": "beneficio per la salute a lungo termine, ma potenziale impatto negativo sulla performance lavorativa immediata"
+                                },
+                                {
+                                    "text": "rimandare l'assunzione del farmaco a dopo l'incontro di lavoro per rimanere più lucido",
+                                    "outcome": "marco riesce a mantenere la concentrazione durante l'incontro, ma la sua pressione risulta più elevata del solito",
+                                    "impact": "vantaggio immediato nella performance lavorativa, ma potenziale rischio per la salute se questo comportamento diventa abituale"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "disease": "diabete",
+                    "nodes": [
+                        {
+                            "situation": "lucia si trova al ristorante con amici. è diabetica e sta seguendo una dieta rigorosa, ma gli amici hanno ordinato un dolce da condividere e la incoraggiano a prenderne un pezzo.",
+                            "reasoning": "la pressione sociale può influire sulle scelte alimentari, specialmente in situazioni sociali.",
+                            "background": "ristorante",
+                            "character1": {
+                                "type": "paziente"
+                            },
+                            "character2": None,
+                            "chat": [
+                                {
+                                    "who": 1,
+                                    "text": "tutti stanno mangiando quel dolce e mi guardano. se rifiuto sembrerà che non voglio fare parte del gruppo, ma non voglio far salire la glicemia..."
+                                }
+                            ],
+                            "choices": [
+                                {
+                                    "text": "rifiutare gentilmente il dolce spiegando la propria condizione",
+                                    "outcome": "lucia mantiene il controllo della glicemia, ma si sente leggermente a disagio per un momento",
+                                    "impact": "positivo per la salute, leggero disagio sociale momentaneo"
+                                },
+                                {
+                                    "text": "concedersi un piccolo assaggio per non sentirsi esclusa",
+                                    "outcome": "lucia gode del momento sociale, ma nota un leggero aumento della glicemia dopo il pasto",
+                                    "impact": "gratificazione sociale immediata, piccolo rischio per la salute se non diventa un'abitudine"
+                                },
+                                {
+                                    "text": "mangiare una porzione normale del dolce per non attirare l'attenzione sulla sua condizione",
+                                    "outcome": "lucia si sente parte del gruppo, ma più tardi deve gestire livelli di glicemia significativamente elevati",
+                                    "impact": "forte impatto negativo sulla salute, temporaneo beneficio sociale"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
