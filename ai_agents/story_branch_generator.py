@@ -68,10 +68,11 @@ class StoryBranchGenerator:
                 Per ogni nodo:
                 1. Descrivi una situazione realistica che potrebbe verificarsi durante una giornata tipica di una persona con {disease}, in cui sia necessario compiere una scelta.
                 2. Fornisci una spiegazione del perché di questa situazione, in base alle informazioni disponibili.
-                3. Fornisci 2 opzioni di scelta plausibili, entrambe con vantaggi e compromessi, evitando che una risulti chiaramente 'giusta'.
+                3. Fornisci ESATTAMENTE 2 opzioni di scelta plausibili, entrambe con vantaggi e compromessi, evitando che una risulti chiaramente 'giusta'.
                 4. Per ciascuna opzione, descrivi:
                 - l'effetto immediato della scelta
                 - l'impatto a breve o medio termine sulla condizione di salute e sul benessere generale della persona
+                - un punteggio: +1 per la scelta più corretta dal punto di vista medico, -1 per la scelta meno corretta
 
                 Assicurati che le situazioni riguardino momenti diversi della giornata, come:
                 - routine del mattino
@@ -92,15 +93,19 @@ class StoryBranchGenerator:
                 Al mattino, Mario si sveglia e deve prendere i farmaci. Deve decidere se fare una colazione o no.
                 Opzione A
                 Mario decide di prepararsi un caffè veloce con un biscotto avanzato dalla sera prima. Non è una colazione vera e propria, ma gli consente di prendere comunque i farmaci. Si prende qualche minuto in più del previsto, ma spera che questa pausa lo aiuti a sentirsi più lucido nel corso della mattinata.
+                Score: +1
                 Opzione B
                 Mario opta per saltare la colazione e rimandare l'assunzione dei farmaci a quando troverà un momento tranquillo. Preferisce approfittare dell'energia mentale iniziale per sbrigare le prime attività mentre la casa è ancora silenziosa. Pensa che potrà recuperare più tardi, magari durante la pausa pranzo.
+                Score: -1
 
                 Esempio 2 di nodo:
                 All'ora della pausa, i colleghi invitano Matteo a prendere un espresso al bar e a mangiare una brioche.
                 Opzione A
                 Va al bar con gli altri e prende un caffè, senza mangiare la brioche, per non rinunciare alla compagnia e limitare gli extra.
+                Score: -1
                 Opzione B
                 Declina l'invito e resta alla scrivania con la propria bottiglietta d'acqua, sfruttando la pausa per rilassarsi.
+                Score: +1
                 
                 Tutto il testo deve essere scritto in **{language}**.
                 """,

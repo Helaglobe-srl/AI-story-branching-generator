@@ -5,6 +5,7 @@ class Choice(BaseModel):
     text: str = Field(..., description="the text describing this choice option")
     outcome: str = Field(..., description="the outcome of making this choice")
     impact: str = Field(..., description="the impact this choice has on the character's condition")
+    score: int = Field(0, description="the score for this choice: +1 for correct, -1 for incorrect")
 
 class Character(BaseModel):
     type: str = Field(..., description="the type of character (e.g., 'paziente', 'dottore')")
@@ -51,22 +52,24 @@ class StoryBranch(BaseModel):
                             "chat": [
                                 { "who": 1, "text": "oggi ho un incontro importante e se prendo la medicina potrei sentirmi stanco." },
                                 { "who": 2, "text": "eh sì, lo so che a volte ti rallenta un po'. non puoi prenderla dopo l'incontro?" },
-                                { "who": 1, "text": "non so, ho sempre paura che saltare l’orario preciso faccia male." },
+                                { "who": 1, "text": "non so, ho sempre paura che saltare l'orario preciso faccia male." },
                                 { "who": 2, "text": "ma è solo per oggi, no? magari cerca di prenderla appena finisci." },
                                 { "who": 1, "text": "sì, ma mi dà ansia anche così. magari la prendo adesso e vada come vada." },
-                                { "who": 2, "text": "fai come ti senti più tranquillo. magari mangia qualcosa prima, ti aiuta un po’ con la stanchezza." },
+                                { "who": 2, "text": "fai come ti senti più tranquillo. magari mangia qualcosa prima, ti aiuta un po' con la stanchezza." },
                                 { "who": 1, "text": "ok, ci penso un attimo. grazie." }
                             ],
                             "choices": [
                                 {
                                     "text": "prendere la medicina come prescritto, nonostante il rischio di sonnolenza durante l'incontro",
                                     "outcome": "la pressione rimane sotto controllo, ma marco avverte una leggera sonnolenza durante la presentazione",
-                                    "impact": "beneficio per la salute a lungo termine, ma potenziale impatto negativo sulla performance lavorativa immediata"
+                                    "impact": "beneficio per la salute a lungo termine, ma potenziale impatto negativo sulla performance lavorativa immediata",
+                                    "score": 1
                                 },
                                 {
                                     "text": "rimandare l'assunzione del farmaco a dopo l'incontro di lavoro per rimanere più lucido",
                                     "outcome": "marco riesce a mantenere la concentrazione durante l'incontro, ma la sua pressione risulta più elevata del solito",
-                                    "impact": "vantaggio immediato nella performance lavorativa, ma potenziale rischio per la salute se questo comportamento diventa abituale"
+                                    "impact": "vantaggio immediato nella performance lavorativa, ma potenziale rischio per la salute se questo comportamento diventa abituale",
+                                    "score": -1
                                 }
                             ]
                         }
@@ -93,17 +96,14 @@ class StoryBranch(BaseModel):
                                 {
                                     "text": "rifiutare gentilmente il dolce spiegando la propria condizione",
                                     "outcome": "lucia mantiene il controllo della glicemia, ma si sente leggermente a disagio per un momento",
-                                    "impact": "positivo per la salute, leggero disagio sociale momentaneo"
-                                },
-                                {
-                                    "text": "concedersi un piccolo assaggio per non sentirsi esclusa",
-                                    "outcome": "lucia gode del momento sociale, ma nota un leggero aumento della glicemia dopo il pasto",
-                                    "impact": "gratificazione sociale immediata, piccolo rischio per la salute se non diventa un'abitudine"
+                                    "impact": "positivo per la salute, leggero disagio sociale momentaneo",
+                                    "score": 1
                                 },
                                 {
                                     "text": "mangiare una porzione normale del dolce per non attirare l'attenzione sulla sua condizione",
                                     "outcome": "lucia si sente parte del gruppo, ma più tardi deve gestire livelli di glicemia significativamente elevati",
-                                    "impact": "forte impatto negativo sulla salute, temporaneo beneficio sociale"
+                                    "impact": "forte impatto negativo sulla salute, temporaneo beneficio sociale",
+                                    "score": -1
                                 }
                             ]
                         }
