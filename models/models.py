@@ -1,5 +1,17 @@
-from typing import List, Optional
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
+
+# Valid background options
+BackgroundType = Literal[
+    "bagno", "camera", "citta", "cucina", 
+    "ufficio", "parco", "palestra", "sala"
+]
+
+# Valid character types
+CharacterType = Literal[
+    "amico", "amica", "collega", "nipote", 
+    "familiare", "conoscente", "paziente"
+]
 
 class Choice(BaseModel):
     text: str = Field(..., description="the text describing this choice option")
@@ -8,7 +20,7 @@ class Choice(BaseModel):
     score: int = Field(0, description="the score for this choice: +1 for correct, -1 for incorrect")
 
 class Character(BaseModel):
-    type: str = Field(..., description="the type of character (e.g., 'paziente', 'dottore')")
+    type: CharacterType = Field(..., description="the type of character (e.g., 'paziente', 'dottore')")
 
 class ChatMessage(BaseModel):
     who: int = Field(..., description="identifier of the character speaking (1 for character1, 2 for character2)")
@@ -17,7 +29,7 @@ class ChatMessage(BaseModel):
 class Node(BaseModel):
     situation: str = Field(..., description="the situation where the character must make a choice")
     reasoning: str = Field(..., description="from which source of information the node was generated")
-    background: Optional[str] = Field(None, description="the setting or location where the situation takes place")
+    background: Optional[BackgroundType] = Field(None, description="the setting or location where the situation takes place")
     character1: Optional[Character] = Field(None, description="the first character in the situation")
     character2: Optional[Character] = Field(None, description="the second character in the situation")
     chat: Optional[List[ChatMessage]] = Field(None, description="the conversation between characters")
@@ -42,7 +54,7 @@ class StoryBranch(BaseModel):
                         {
                             "situation": "marco si sveglia con un leggero mal di testa. deve prendere le medicine per l'ipertensione ma ha un importante incontro di lavoro tra un'ora e sa che le medicine potrebbero causargli sonnolenza.",
                             "reasoning": "l'aderenza alla terapia è importante, ma anche gli impegni quotidiani e gli effetti collaterali possono influenzare le decisioni.",
-                            "background": "camera da letto",
+                            "background": "camera",
                             "character1": {
                                 "type": "paziente"
                             },
@@ -81,7 +93,7 @@ class StoryBranch(BaseModel):
                         {
                             "situation": "lucia si trova al ristorante con amici. è diabetica e sta seguendo una dieta rigorosa, ma gli amici hanno ordinato un dolce da condividere e la incoraggiano a prenderne un pezzo.",
                             "reasoning": "la pressione sociale può influire sulle scelte alimentari, specialmente in situazioni sociali.",
-                            "background": "ristorante",
+                            "background": "sala",
                             "character1": {
                                 "type": "paziente"
                             },
