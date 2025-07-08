@@ -4,10 +4,12 @@ import traceback
 import asyncio
 import nest_asyncio
 import streamlit as st
+import time
 from dotenv import load_dotenv
 from excel.excel_converter import StoryBranchExcelConverter
 from ai_agents.story_branch_generator import StoryBranchGenerator
 from ai_agents.conversation_enhancer import ConversationEnhancer
+from utils.logger import app_logger, get_logger
 from utils.utils import (
     setup_directories, 
     extract_text_from_pdf, 
@@ -15,6 +17,8 @@ from utils.utils import (
     extract_text_from_url, 
     get_filename_from_url
 )
+
+logger = get_logger("main")
 
 load_dotenv()
 
@@ -101,12 +105,20 @@ def main():
             st.error("Please enter a disease name")
             return
             
+        # Create status display area
         progress_bar = st.progress(0)
         status_text = st.empty()
+        
+        # Set up the logger to use the status text
+        app_logger.set_status_text(status_text)
         
         # create event loop
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        
+        logger.info(f"Starting story branch generation for disease: {disease}")
+        logger.info(f"Using model: {model}")
+        logger.info(f"Number of nodes: {how_many_nodes}")
         
         excel_converter = StoryBranchExcelConverter(BASE_DIR)
         story_generator = StoryBranchGenerator(model, SUMMARY_TEXT_DIR)
@@ -119,40 +131,51 @@ def main():
             # process pdfs if present
             if uploaded_files:
                 total_files = len(uploaded_files)
+                logger.info(f"Processing {total_files} PDF files")
+                
                 for file_index, pdf_file in enumerate(uploaded_files):
+                    start_time = time.time()
                     status_text.text(f"Processing PDF {file_index+1} of {total_files}: {pdf_file.name}")
                     progress_bar.progress(file_index / total_files)
+                    logger.info(f"Starting processing of PDF {file_index+1}/{total_files}: {pdf_file.name}")
                     
                     # temporary save of uploaded file
                     temp_path = f"temp_{pdf_file.name}"
                     with open(temp_path, "wb") as f:
                         f.write(pdf_file.getbuffer())
+                    logger.info(f"PDF saved temporarily as {temp_path}")
                     
                     try:
                         # extract text from pdf
+                        logger.info(f"Extracting text from PDF")
                         pdf_text = extract_text_from_pdf(temp_path)
                         if not pdf_text:
-                            st.error(f"Impossible to extract text from {pdf_file.name}")
+                            error_msg = f"Impossible to extract text from {pdf_file.name}"
+                            logger.error(error_msg)
+                            st.error(error_msg)
                             continue
+                        logger.info(f"Successfully extracted {len(pdf_text)} characters of text")
                         
                         # save raw text
                         base_filename = pdf_file.name.replace('.pdf', '')
                         raw_text_path = os.path.join(RAW_TEXT_DIR, f"{base_filename}.txt")
                         save_text_to_file(pdf_text, raw_text_path)
+                        logger.info(f"Raw text saved to {raw_text_path}")
                         
                         # process text with agents
+                        logger.info(f"Starting story branch generation with AI agent")
                         story_branch, base_filename = loop.run_until_complete(
                             story_generator.create_story_branch_from_text(pdf_text, pdf_file.name, disease, language=LANGUAGE, how_many_nodes=how_many_nodes)
                         )
+                        logger.info(f"Story branch generation completed")
                         
                         if story_branch:
-                            # save story branch for combined export
-                            all_story_branches.append((story_branch, base_filename))
-                            
-                            # save story branch in json
+                            # save initial story branch in json
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
                             with open(output_path, "w") as f:
                                 json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            logger.info(f"Story branch saved to {output_path}")
+                            
                             # enhance conversations if requested
                             if enhance_conversations:
                                 status_text.text(f"Enhancing conversations for {base_filename}...")
@@ -172,11 +195,15 @@ def main():
                             
                             # notify about text cleaning
                             summary_path = os.path.join(SUMMARY_TEXT_DIR, f'{base_filename}_summary.txt')
+                            logger.info(f"Text cleaned and formatted saved in: {summary_path}")
+                            st.info(f"Text cleaned and formatted saved in: {summary_path}")
                             
                             if not combine_excel:
                                 # convert to excel (individual file)
+                                logger.info(f"Converting story branch to Excel")
                                 excel_path = excel_converter.story_branch_to_excel(story_branch, base_filename)
                                 if excel_path:
+                                    logger.info(f"Excel story branch saved in: {excel_path}")
                                     st.info(f"Excel story branch saved in: {excel_path}")
                                     
                                     # download button
@@ -218,46 +245,69 @@ def main():
                                     st.write(f"  - **Impact:** {choice.impact}")
                             
                             st.write("---")
+                            
+                            # Log processing time
+                            end_time = time.time()
+                            processing_time = end_time - start_time
+                            logger.info(f"Processing of {pdf_file.name} completed in {processing_time:.2f} seconds")
+                    
+                    except Exception as e:
+                        error_msg = f"Error processing PDF {pdf_file.name}: {str(e)}"
+                        logger.error(error_msg)
+                        logger.error(traceback.format_exc())
+                        st.error(error_msg)
                     
                     finally:
                         # cleanup temporary file
                         if os.path.exists(temp_path):
                             os.remove(temp_path)
+                            logger.info(f"Temporary file {temp_path} removed")
             
             # process urls if present
             if urls_list:
                 total_urls = len(urls_list)
+                logger.info(f"Processing {total_urls} URLs")
+                
                 for url_index, url in enumerate(urls_list):
+                    start_time = time.time()
                     status_text.text(f"Processing URL {url_index+1} of {total_urls}: {url}")
                     progress_bar.progress(url_index / total_urls)
+                    logger.info(f"Starting processing of URL {url_index+1}/{total_urls}: {url}")
                     
                     try:
                         # extract text from url
+                        logger.info(f"Extracting text from URL")
                         url_text = extract_text_from_url(url)
                         if not url_text:
-                            st.error(f"Impossible to extract text from {url}")
+                            error_msg = f"Impossible to extract text from {url}"
+                            logger.error(error_msg)
+                            st.error(error_msg)
                             continue
+                        logger.info(f"Successfully extracted {len(url_text)} characters of text")
                         
                         # extract filename from url
                         base_filename = get_filename_from_url(url)
+                        logger.info(f"Generated base filename: {base_filename}")
                         
                         # save raw text
                         raw_text_path = os.path.join(RAW_TEXT_DIR, f"{base_filename}.txt")
                         save_text_to_file(url_text, raw_text_path)
+                        logger.info(f"Raw text saved to {raw_text_path}")
                         
                         # process text with agents
+                        logger.info(f"Starting story branch generation with AI agent")
                         story_branch, base_filename = loop.run_until_complete(
                             story_generator.create_story_branch_from_text(url_text, base_filename, disease, language=LANGUAGE, how_many_nodes=how_many_nodes)
                         )
+                        logger.info(f"Story branch generation completed")
                         
                         if story_branch:
-                            # save story branch for combined export
-                            all_story_branches.append((story_branch, base_filename))
-                            
-                            # save story branch in json
+                            # save initial story branch in json
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
                             with open(output_path, "w") as f:
                                 json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            logger.info(f"Story branch saved to {output_path}")
+                            
                             # enhance conversations if requested
                             if enhance_conversations:
                                 status_text.text(f"Enhancing conversations for {base_filename}...")
@@ -282,8 +332,10 @@ def main():
                             
                             if not combine_excel:
                                 # convert to excel (individual file)
+                                logger.info(f"Converting story branch to Excel")
                                 excel_path = excel_converter.story_branch_to_excel(story_branch, base_filename)
                                 if excel_path:
+                                    logger.info(f"Excel story branch saved in: {excel_path}")
                                     st.info(f"Excel story branch saved in: {excel_path}")
                                     
                                     # download button
@@ -325,14 +377,21 @@ def main():
                                     st.write(f"  - **Impact:** {choice.impact}")
                             
                             st.write("---")
+                            
+                            # log processing time
+                            end_time = time.time()
+                            processing_time = end_time - start_time
+                            logger.info(f"Processing of URL {url} completed in {processing_time:.2f} seconds")
                     
                     except Exception as e:
-                        st.error(f"Error processing URL {url}: {str(e)}")
-                        print(f"Error processing URL {url}: {str(e)}")
-                        print(traceback.format_exc())
+                        error_msg = f"Error processing URL {url}: {str(e)}"
+                        logger.error(error_msg)
+                        logger.error(traceback.format_exc())
+                        st.error(error_msg)
             
             # create combined excel file if requested and there are story branches
             if combine_excel and all_story_branches:
+                logger.info(f"Creating combined Excel file for {len(all_story_branches)} story branches")
                 combined_buffer = excel_converter.combine_story_branches_to_excel(all_story_branches)
                 
                 # download button for combined file
@@ -346,19 +405,23 @@ def main():
                 # also save to file system with timestamp
                 combined_path = excel_converter.save_combined_excel(combined_buffer)
                 if combined_path:
+                    logger.info(f"Combined Excel file saved in: {combined_path}")
                     st.info(f"Combined Excel file saved in: {combined_path}")
             
             status_text.text("Processing completed!")
             progress_bar.progress(1.0)
+            logger.info("All processing completed successfully!")
             
         except Exception as e:
-            st.error(f"An error occurred: {str(e)}")
-            print(f"Error in main processing loop: {str(e)}")
-            print(traceback.format_exc())
+            error_msg = f"An error occurred: {str(e)}"
+            logger.error(error_msg)
+            logger.error(traceback.format_exc())
+            st.error(error_msg)
         
         finally:
             # close event loop
             loop.close()
+            logger.info("Event loop closed")
         
         st.success("All files have been processed!")
 

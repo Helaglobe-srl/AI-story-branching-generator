@@ -2,6 +2,9 @@ import os
 from urllib.parse import urlparse
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
 from langchain_community.document_transformers import Html2TextTransformer
+from utils.logger import get_logger
+
+logger = get_logger("utils")
 
 def setup_directories(base_dir):
     """Set up necessary directories
@@ -18,7 +21,9 @@ def setup_directories(base_dir):
     
     for directory in [RAW_TEXT_DIR, SUMMARY_TEXT_DIR, JSON_OUTPUT_DIR]:
         os.makedirs(directory, exist_ok=True)
+        logger.debug(f"Created directory: {directory}")
         
+    logger.info("Application directories setup complete")
     return RAW_TEXT_DIR, SUMMARY_TEXT_DIR, JSON_OUTPUT_DIR
 
 def extract_text_from_pdf(pdf_path: str) -> str:
@@ -31,11 +36,14 @@ def extract_text_from_pdf(pdf_path: str) -> str:
         str: The text extracted from the PDF
     """
     try:
+        logger.info(f"Extracting text from PDF: {pdf_path}")
         loader = PyPDFLoader(pdf_path)
         pages = loader.load()
-        return "\n".join([page.page_content for page in pages])
+        text = "\n".join([page.page_content for page in pages])
+        logger.info(f"Successfully extracted {len(pages)} pages from PDF")
+        return text
     except Exception as e:
-        print(f"Error extracting text from PDF: {str(e)}")
+        logger.error(f"Error extracting text from PDF: {str(e)}")
         return ""
 
 def save_text_to_file(text: str, file_path: str) -> None:
@@ -46,10 +54,12 @@ def save_text_to_file(text: str, file_path: str) -> None:
         file_path (str): The path of the file where to save the text
     """
     try:
+        logger.debug(f"Saving text to file: {file_path}")
         with open(file_path, "w", encoding="utf-8") as f:
             f.write(text)
+        logger.debug(f"Successfully saved {len(text)} characters to file")
     except Exception as e:
-        print(f"Error saving text to file: {str(e)}")
+        logger.error(f"Error saving text to file: {str(e)}")
 
 def extract_text_from_url(url: str) -> str:
     """Extract text from URL
@@ -61,17 +71,21 @@ def extract_text_from_url(url: str) -> str:
         str: The text extracted from the URL
     """
     try:
+        logger.info(f"Extracting text from URL: {url}")
         loader = WebBaseLoader(url)
         docs = loader.load()
         
         # html to text
+        logger.debug("Converting HTML to text")
         html2text = Html2TextTransformer()
         docs_transformed = html2text.transform_documents(docs)
         
         # combine pages into a single text
-        return "\n".join([doc.page_content for doc in docs_transformed])
+        text = "\n".join([doc.page_content for doc in docs_transformed])
+        logger.info(f"Successfully extracted {len(text)} characters from URL")
+        return text
     except Exception as e:
-        print(f"Error extracting text from URL {url}: {str(e)}")
+        logger.error(f"Error extracting text from URL {url}: {str(e)}")
         return ""
 
 def get_filename_from_url(url: str) -> str:
@@ -87,4 +101,5 @@ def get_filename_from_url(url: str) -> str:
     filename = os.path.basename(parsed.path) or parsed.netloc
     # remove file extension
     filename = os.path.splitext(filename)[0]
+    logger.debug(f"Generated filename '{filename}' from URL: {url}")
     return filename 
