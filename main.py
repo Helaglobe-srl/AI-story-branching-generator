@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from excel.excel_converter import StoryBranchExcelConverter
 from ai_agents.story_branch_generator import StoryBranchGenerator
+from ai_agents.conversation_enhancer import ConversationEnhancer
 from utils.utils import (
     setup_directories, 
     extract_text_from_pdf, 
@@ -83,6 +84,11 @@ def main():
         help="Choose how many decision nodes to generate in the story branch"
     )
     
+    # option for conversation enhancement
+    enhance_conversations = st.checkbox("Enhance conversations in story branches", value=True, 
+                                       help="Add more detailed conversations to story branches")
+
+    
     st.write("---")
     
     # verify api key
@@ -104,6 +110,7 @@ def main():
         
         excel_converter = StoryBranchExcelConverter(BASE_DIR)
         story_generator = StoryBranchGenerator(model, SUMMARY_TEXT_DIR)
+        conversation_enhancer = ConversationEnhancer(model)
         
         # store all story branches for combined export
         all_story_branches = []
@@ -146,9 +153,25 @@ def main():
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
                             with open(output_path, "w") as f:
                                 json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            # enhance conversations if requested
+                            if enhance_conversations:
+                                status_text.text(f"Enhancing conversations for {base_filename}...")
+                                logger.info(f"Starting conversation enhancement")
+                                enhanced_output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_enhanced_story_branch.json")
+                                story_branch = loop.run_until_complete(
+                                    conversation_enhancer.enhance_conversations(story_branch, enhanced_output_path)
+                                )
+                                logger.info(f"Conversation enhancement completed")
+                                logger.info(f"Enhanced story branch saved to {enhanced_output_path}")
+                                
+                                # use the enhanced story branch for further processing
+                                output_path = enhanced_output_path
+                            
+                            # save story branch for combined export
+                            all_story_branches.append((story_branch, base_filename))
                             
                             # notify about text cleaning
-                            st.info(f"Text cleaned and formatted saved in: {os.path.join(SUMMARY_TEXT_DIR, f'{base_filename}_cleaned.txt')}")
+                            summary_path = os.path.join(SUMMARY_TEXT_DIR, f'{base_filename}_summary.txt')
                             
                             if not combine_excel:
                                 # convert to excel (individual file)
@@ -172,6 +195,23 @@ def main():
                             for node_index, node in enumerate(story_branch.nodes, 1):
                                 st.write(f"\n**Node {node_index}:** {node.situation}")
                                 st.write(f"**Reasoning:** {node.reasoning}")
+                                
+                                # display chat if it exists
+                                if node.chat and len(node.chat) > 0:
+                                    st.write("**Conversation:**")
+                                    for chat_msg in node.chat:
+                                        # Handle both ChatMessage objects and dictionaries
+                                        if isinstance(chat_msg, dict):
+                                            who_value = chat_msg.get('who', 0)
+                                            text_value = chat_msg.get('text', '')
+                                        else:
+                                            who_value = getattr(chat_msg, 'who', 0)
+                                            text_value = getattr(chat_msg, 'text', '')
+                                        
+                                        speaker = "Patient" if who_value == 1 else node.character2.type if node.character2 and hasattr(node.character2, 'type') else "Other"
+                                        st.write(f"- **{speaker}:** {text_value}")
+                                
+                                # display choices
                                 for choice_index, choice in enumerate(node.choices, 1):
                                     st.write(f"- **Choice {choice_index}:** {choice.text}")
                                     st.write(f"  - **Outcome:** {choice.outcome}")
@@ -218,9 +258,27 @@ def main():
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
                             with open(output_path, "w") as f:
                                 json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            # enhance conversations if requested
+                            if enhance_conversations:
+                                status_text.text(f"Enhancing conversations for {base_filename}...")
+                                logger.info(f"Starting conversation enhancement")
+                                enhanced_output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_enhanced_story_branch.json")
+                                story_branch = loop.run_until_complete(
+                                    conversation_enhancer.enhance_conversations(story_branch, enhanced_output_path)
+                                )
+                                logger.info(f"Conversation enhancement completed")
+                                logger.info(f"Enhanced story branch saved to {enhanced_output_path}")
+                                
+                                # use the enhanced story branch for further processing
+                                output_path = enhanced_output_path
+                            
+                            # save story branch for combined export
+                            all_story_branches.append((story_branch, base_filename))
                             
                             # notify about summary
-                            st.info(f"Summary saved in: {os.path.join(SUMMARY_TEXT_DIR, f'{base_filename}_summary.txt')}")
+                            summary_path = os.path.join(SUMMARY_TEXT_DIR, f'{base_filename}_summary.txt')
+                            logger.info(f"Summary saved in: {summary_path}")
+                            st.info(f"Summary saved in: {summary_path}")
                             
                             if not combine_excel:
                                 # convert to excel (individual file)
@@ -244,6 +302,23 @@ def main():
                             for node_index, node in enumerate(story_branch.nodes, 1):
                                 st.write(f"\n**Node {node_index}:** {node.situation}")
                                 st.write(f"**Reasoning:** {node.reasoning}")
+                                
+                                # display chat if it exists
+                                if node.chat and len(node.chat) > 0:
+                                    st.write("**Conversation:**")
+                                    for chat_msg in node.chat:
+                                        # handle both ChatMessage objects and dictionaries
+                                        if isinstance(chat_msg, dict):
+                                            who_value = chat_msg.get('who', 0)
+                                            text_value = chat_msg.get('text', '')
+                                        else:
+                                            who_value = getattr(chat_msg, 'who', 0)
+                                            text_value = getattr(chat_msg, 'text', '')
+                                        
+                                        speaker = "Patient" if who_value == 1 else node.character2.type if node.character2 and hasattr(node.character2, 'type') else "Other"
+                                        st.write(f"- **{speaker}:** {text_value}")
+                                
+                                # display choices
                                 for choice_index, choice in enumerate(node.choices, 1):
                                     st.write(f"- **Choice {choice_index}:** {choice.text}")
                                     st.write(f"  - **Outcome:** {choice.outcome}")

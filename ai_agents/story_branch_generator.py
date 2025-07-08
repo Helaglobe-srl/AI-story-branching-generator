@@ -4,6 +4,9 @@ from typing import Tuple, Optional
 from agents import Agent, Runner, ModelSettings
 from models.models import StoryBranch
 from utils.utils import save_text_to_file
+from utils.logger import get_logger
+
+logger = get_logger("story_branch_generator")
 
 class StoryBranchGenerator:
     """Class for generating story branches using AI agents"""
@@ -18,6 +21,8 @@ class StoryBranchGenerator:
         self.model = model
         self.summary_dir = summary_dir
         os.makedirs(self.summary_dir, exist_ok=True)
+        logger.info(f"StoryBranchGenerator initialized with model: {model}")
+        logger.info(f"Summary directory: {summary_dir}")
     
     async def create_story_branch_from_text(self, text: str, filename: str, disease: str, language: str = "Italian", how_many_nodes: int = 10) -> Tuple[Optional[StoryBranch], Optional[str]]:
         """Process a single text document through the agent pipeline
@@ -34,8 +39,11 @@ class StoryBranchGenerator:
         try:
             # remove .pdf extension from filename
             base_filename = filename.replace('.pdf', '')
+            logger.info(f"Processing text for {base_filename} about {disease} in {language}")
+            logger.info(f"Generating story branch with {how_many_nodes} nodes")
             
             # processing with text_cleaner agent
+            logger.info("Creating text formatter agent")
             text_cleaner = Agent(
                 name="text formatter",
                 instructions=f"""
@@ -52,13 +60,17 @@ class StoryBranchGenerator:
                 model=self.model
             )
 
+            logger.info("Running text formatter agent")
             summary_result = await Runner.run(text_cleaner, text)
+            logger.info("Text formatter agent completed")
             
             # save summary
             summary_path = os.path.join(self.summary_dir, f"{base_filename}_summary.txt")
             save_text_to_file(summary_result.final_output, summary_path)
+            logger.info(f"Saved formatted text to {summary_path}")
             
             # story branch generation
+            logger.info("Creating story branch generator agent")
             story_generator = Agent(
                 name="story branch generator",
                 instructions = f"""
@@ -114,7 +126,8 @@ class StoryBranchGenerator:
                 model_settings=ModelSettings(temperature=0.3)
             )
             
-            # Prepare the prompt for the story generator
+            # prompt for the story generator
+            logger.info("Preparing prompt for story generator")
             prompt = f"""
             **Patologia: {disease}**
 
@@ -124,15 +137,22 @@ class StoryBranchGenerator:
             Crea una *story branch* con nodi decisionali per una persona che convive con {disease}.
             """
             
+            logger.info("Running story branch generator agent")
             story_result = await Runner.run(story_generator, prompt)
+            logger.info("Story branch generator agent completed")
             
-            # Set the disease field in the result
+            # disease field in the result
             if story_result.final_output_as(StoryBranch):
                 story_result.final_output_as(StoryBranch).disease = disease
+                logger.info(f"Successfully generated story branch with {len(story_result.final_output_as(StoryBranch).nodes)} nodes")
+            else:
+                logger.warning("Failed to generate story branch")
             
             return story_result.final_output_as(StoryBranch), base_filename  
             
         except Exception as e:
+            logger.error(f"Error processing {filename}: {str(e)}")
+            logger.error(traceback.format_exc())
             print(f"Error processing {filename}: {str(e)}")
             print(traceback.format_exc())
             return None, None 
