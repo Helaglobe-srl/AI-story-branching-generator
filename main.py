@@ -15,7 +15,8 @@ from utils.utils import (
     extract_text_from_pdf, 
     save_text_to_file, 
     extract_text_from_url, 
-    get_filename_from_url
+    get_filename_from_url,
+    save_json_to_file
 )
 
 logger = get_logger("main")
@@ -172,8 +173,7 @@ def main():
                         if story_branch:
                             # save initial story branch in json
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
-                            with open(output_path, "w") as f:
-                                json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            save_json_to_file(story_branch.model_dump(), output_path)
                             logger.info(f"Story branch saved to {output_path}")
                             
                             # enhance conversations if requested
@@ -304,8 +304,7 @@ def main():
                         if story_branch:
                             # save initial story branch in json
                             output_path = os.path.join(JSON_OUTPUT_DIR, f"{base_filename}_story_branch.json")
-                            with open(output_path, "w") as f:
-                                json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+                            save_json_to_file(story_branch.model_dump(), output_path)
                             logger.info(f"Story branch saved to {output_path}")
                             
                             # enhance conversations if requested

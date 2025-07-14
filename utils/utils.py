@@ -1,4 +1,5 @@
 import os
+import json
 from urllib.parse import urlparse
 from langchain_community.document_loaders import PyPDFLoader, WebBaseLoader
 from langchain_community.document_transformers import Html2TextTransformer
@@ -60,6 +61,40 @@ def save_text_to_file(text: str, file_path: str) -> None:
         logger.debug(f"Successfully saved {len(text)} characters to file")
     except Exception as e:
         logger.error(f"Error saving text to file: {str(e)}")
+
+def save_json_to_file(data: dict, file_path: str) -> None:
+    """Save JSON data to file with UTF-8 encoding
+    
+    Args:
+        data (dict): The JSON data to save
+        file_path (str): The path of the file where to save the JSON
+    """
+    try:
+        logger.debug(f"Saving JSON to file: {file_path}")
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        logger.debug(f"Successfully saved JSON data to file")
+    except Exception as e:
+        logger.error(f"Error saving JSON to file: {str(e)}")
+
+def read_json_from_file(file_path: str) -> dict:
+    """Read JSON data from file with UTF-8 encoding
+    
+    Args:
+        file_path (str): The path of the file to read JSON from
+        
+    Returns:
+        dict: The JSON data read from the file
+    """
+    try:
+        logger.debug(f"Reading JSON from file: {file_path}")
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        logger.debug(f"Successfully read JSON data from file")
+        return data
+    except Exception as e:
+        logger.error(f"Error reading JSON from file: {str(e)}")
+        return {}
 
 def extract_text_from_url(url: str) -> str:
     """Extract text from URL

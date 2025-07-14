@@ -4,6 +4,7 @@ from typing import Dict, List, Optional, Tuple, get_args
 from agents import Agent, Runner, ModelSettings
 from models.models import StoryBranch, BackgroundType, CharacterType
 from utils.logger import get_logger
+from utils.utils import save_json_to_file
 
 logger = get_logger("conversation_enhancer")
 
@@ -168,8 +169,7 @@ class ConversationEnhancer:
         
         # save the enhanced story branch
         logger.info(f"Saving enhanced story branch to {output_path}")
-        with open(output_path, "w") as f:
-            json.dump(story_branch.model_dump(), f, indent=2, ensure_ascii=False)
+        save_json_to_file(story_branch.model_dump(), output_path)
         logger.info("Enhancement complete")
         
         return story_branch 
